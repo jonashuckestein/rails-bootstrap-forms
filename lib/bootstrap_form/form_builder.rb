@@ -18,6 +18,7 @@ module BootstrapForm
 
     FORM_HELPERS.each do |method_name|
       define_method(method_name) do |name, *args|
+        normalize_args!(method_name, args)
         options = args.extract_options!.symbolize_keys!
 
         label = options.delete(:label)
@@ -27,11 +28,7 @@ module BootstrapForm
         form_group(name, label: { text: label, class: label_class }, help: help) do
           options[:class] = "form-control #{options[:class]}".rstrip
           args << options.except(:prepend, :append)
-          if method_name == "select"
-            input = super(name, *args, { class: options[:class] })
-          else
-            input = super(name, *args)
-          end
+          input = super(name, *args)
           prepend_and_append_input(input, options[:prepend], options[:append])
         end
       end
@@ -78,7 +75,12 @@ module BootstrapForm
 
     def submit(name = nil, options = {})
       options.merge! class: 'btn btn-default' unless options.has_key? :class
-      super name, options
+      super(name, options)
+    end
+
+    def primary(name = nil, options = {})
+      options.merge! class: 'btn btn-primary'
+      submit(name, options)
     end
 
     def alert_message(title, *args)
@@ -90,7 +92,25 @@ module BootstrapForm
       end
     end
 
+    def fields_for(record_name, record_object = nil, fields_options = {}, &block)
+      fields_options, record_object = record_object, nil if record_object.is_a?(Hash) && record_object.extractable_options?
+      fields_options[:style] ||= options[:style]
+      fields_options[:left] = (fields_options.include?(:left)) ? fields_options[:left] + " control-label" : options[:left]
+      fields_options[:right] ||= options[:right]
+      super(record_name, record_object, fields_options, &block)
+    end
+
     private
+
+    def normalize_args!(method_name, args)
+      if method_name == "select"
+        args << {} while args.length < 3
+      elsif method_name == "collection_select"
+        args << {} while args.length < 5
+      elsif method_name =~ /_select/
+        args << {} while args.length < 2
+      end
+    end
 
     def horizontal?
       style == :horizontal
