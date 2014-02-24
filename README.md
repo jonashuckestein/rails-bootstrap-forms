@@ -1,8 +1,17 @@
-[![Build Status](https://travis-ci.org/potenza/bootstrap_form.png)](https://travis-ci.org/potenza/bootstrap_form) [![Code Climate](https://codeclimate.com/github/potenza/bootstrap_form.png)](https://codeclimate.com/github/potenza/bootstrap_form)
+[![Build Status](https://travis-ci.org/bootstrap-ruby/rails-bootstrap-forms.png)](https://travis-ci.org/bootstrap-ruby/rails-bootstrap-forms) [![Code Climate](https://codeclimate.com/github/bootstrap-ruby/rails-bootstrap-forms.png)](https://codeclimate.com/github/bootstrap-ruby/rails-bootstrap-forms)
 
-# BootstrapForm
+# Rails Bootstrap Forms
 
-**BootstrapForm** is a rails form builder that makes it super easy to integrate
+---
+
+We are currently merging the following repositories:
+
+- https://github.com/sethvargo/bootstrap_forms
+- https://github.com/potenza/bootstrap_form
+
+---
+
+**Rails Bootstrap Forms** is a rails form builder that makes it super easy to integrate
 twitter bootstrap-style forms into your rails application.
 
 ## Requirements
@@ -21,16 +30,20 @@ Then:
 
 `bundle`
 
+Then require the CSS on your `application.css` file:
+
+`//= require rails_bootstrap_forms`
+
 ## Usage
 
-To get started, just use the **BootstrapForm** form helper. Here's an example:
+To get started, just use the **Rails Bootstrap Forms** form helper. Here's an example:
 
 ```erb
 <%= bootstrap_form_for(@user) do |f| %>
   <%= f.email_field :email %>
   <%= f.password_field :password %>
   <%= f.check_box :remember_me %>
-  <%= f.submit "Log In" %>
+  <%= f.submit %>
 <% end %>
 ```
 
@@ -60,21 +73,34 @@ This generates the following HTML:
 
 This gem wraps the following Rails form helpers:
 
-* text_field
-* password_field
-* text_area
-* file_field
-* number_field
-* email_field
-* telephone_field / phone_field
-* url_field
-* select
-* collection_select
-* date_select
-* time_select
-* datetime_select
 * check_box
+* check_boxes_collection
+* collection_select
+* color_field
+* date_field
+* date_select
+* datetime_field
+* datetime_local_field
+* datetime_select
+* email_field
+* file_field
+* hidden_field (not wrapped, but supported)
+* month_field
+* number_field
+* password_field
+* phone_field
 * radio_button
+* radio_buttons_collection
+* range_field
+* search_field
+* select
+* telephone_field
+* text_area
+* text_field
+* time_field
+* time_select
+* url_field
+* week_field
 
 ### Default Form Style
 
@@ -92,7 +118,7 @@ using screen readers.
   <%= f.email_field :email, hide_label: true %>
   <%= f.password_field :password, hide_label: true %>
   <%= f.check_box :remember_me %>
-  <%= f.submit "Log In" %>
+  <%= f.submit %>
 <% end %>
 ```
 
@@ -113,18 +139,8 @@ In the example below, the checkbox and submit button have been wrapped in a
     <%= f.check_box :remember_me %>
   <% end %>
   <%= f.form_group do %>
-    <%= f.submit "Log In" %>
+    <%= f.submit %>
   <% end %>
-<% end %>
-```
-
-To create a static control in a horizontal form, use the following markup:
-
-```erb
-<%= f.form_group :nil, label: { text: "Foo" } do %>
-  <p class="form-control-static">
-    Bar
-  </p>
 <% end %>
 ```
 
@@ -161,7 +177,7 @@ buttons.
 ```
 
 You can also use the `primary` helper, which adds `btn btn-primary` to your
-submit button:
+submit button **(master branch only)**:
 
 ```erb
 <%= f.primary "Optional Label" %>
@@ -211,6 +227,22 @@ To display checkboxes and radios inline, pass the `inline: true` option:
 <% end %>
 ```
 
+#### Collections
+
+BootstrapForms also provide helpful helpers that automatically creates the
+`form_group` and the `radio_button`s or `check_box`es for you:
+
+```erb
+<%= f.radio_buttons_collection :skill_level, Skill.all, :id, :name %>
+<%= f.check_boxes_collection :skills, Skill.all, :id, :name %>
+```
+
+Collection methods accept these options:
+* `:label`: Customize the `form_group`'s label;
+* `:hide_label`: Pass true to hide the `form_group`'s label;
+* `:help`: Add a help span to the `form_group`;
+* Other options will be forwarded to the `radio_button`/`check_box` method;
+
 ### Prepending and Appending Inputs
 
 You can pass `prepend` and/or `append` options to input fields:
@@ -219,6 +251,49 @@ You can pass `prepend` and/or `append` options to input fields:
 <%= f.text_field :price, prepend: "$", append: ".00" %>
 ```
 
+### Static Controls **(master branch only)**
+
+You can create a static control like this:
+
+```erb
+<%= f.static_control :email %>
+```
+
+Here's the output:
+
+```html
+<div class="form-group">
+  <label class="col-sm-2 control-label" for="user_email">Email</label>
+  <div class="col-sm-10">
+    <p class="form-control-static">test@email.com</p>
+  </div>
+</div>
+```
+
+You can also create a static control that isn't based on a model attribute:
+
+```erb
+<%= f.static_control nil, label: "Custom Static Control" do %>
+  Content Here
+<% end %>
+```
+
+### Date helpers
+
+The multiple selects that the date and time helpers (`date_select`,
+`time_select`, `datetime_select`) generate are wrapped inside a
+`div.rails-bootstrap-forms-[date|time|datetime]-select` tag. This is because
+Boostrap automatically stylizes ours controls as `block`s. This wrapper fix
+this defining these selects as `inline-block`s.
+
+```erb
+<%= f.date_select :birthdate, { label: 'Your day' }, { style: 'width: 10%' } %>
+```
+
+Note that in the example above we passed `width: 10%` to be the style of the
+generated selects. This is necessary because even the elements being
+`inline-block`s they must have a width which enable them to stay side by side.
+
 ### Validation Errors
 
 When a validation error is triggered, the field will be outlined and the error
@@ -226,11 +301,43 @@ will be displayed below the field. Rails normally wraps the fields in a div
 (field_with_errors), but this behavior is suppressed.
 
 To display an error message wrapped in `.alert` and `.alert-danger`
-classes, you can use the `alert_message` helper:
+classes, you can use the `alert_message` helper. This won't output anything
+unless a model validation has failed.
 
 ```erb
 <%= f.alert_message "Please fix the errors below." %>
 ```
+
+You can turn off inline errors with the option `inline_errors: false`. Combine
+this with `alert_message` to display an alert message with an error summary.
+
+```erb
+<%= bootstrap_form_for(@user, inline_errors: false) do |f| %>
+  <%= f.alert_message "Please fix the following errors:" %>
+<% end %>
+```
+
+If you don't want an error summary, just send the `error_summary: false` option
+to `alert_message`.
+
+```erb
+<%= bootstrap_form_for(@user, inline_errors: false) do |f| %>
+  <%= f.alert_message "Please fix the following errors", error_summary: false %>
+<% end %>
+```
+
+To output a simple unordered list of errors, use `error_summary`.
+
+```erb
+<%= bootstrap_form_for(@user, inline_errors: false) do |f| %>
+  <%= f.error_summary %>
+<% end %>
+```
+
+### Internationalization
+
+bootstrap_form follows standard rails conventions so it's i18n-ready. See more
+here: http://guides.rubyonrails.org/i18n.html#translations-for-active-record-models
 
 ## Code Triage page
 
@@ -242,4 +349,4 @@ https://github.com/potenza/bootstrap_form/graphs/contributors
 
 ## License
 
-MIT License. Copyright 2012-2013 Stephen Potenza (https://github.com/potenza)
+MIT License. Copyright 2012-2014 Stephen Potenza (https://github.com/potenza)
